@@ -1,3 +1,44 @@
+
+body {
+    font-family: 'Courier New', monospace;
+    padding: 0;
+    margin: 0;
+  }
+
+
+
+.long {
+    background: green;
+    width:100%;
+    height: 7000px;
+}
+
+
+
+/* Avoid the navbar from covering the titles */
+html {
+    scroll-padding-top: 50px; 
+}
+body {
+    margin: 50px auto 0; 
+}
+
+
+
+/* #################### Header Styling #################### */
+
+header {
+    text-align: center;
+}
+
+
+
+
+
+
+
+
+/* #################### Navigarion Bar Styling #################### */
 /* Add a background color to the top navigation bar */
 .nav-bar {
     background-color: #333;
@@ -8,6 +49,7 @@
   }
   
   /* Style the links inside the navigation bar */
+  .nav-bar h4,
   .nav-bar a {
     float: left;
     color: #f2f2f2;
@@ -17,6 +59,10 @@
     font-size: 17px;
   }
   
+  .nav-bar h4 {
+    margin: 0;
+  }
+
   /* Change the color of links on hover */
   .nav-bar a:hover {
     background-color: #ddd;
