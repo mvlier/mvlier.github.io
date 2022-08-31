@@ -7,7 +7,7 @@
     --backColor: #F7F9FF;
     --backSideBar: #dfe2ec;
     --sideBarHover: #cfd4e2;
-    
+    --sideBarSize: 240px;
 }
 
 
@@ -18,7 +18,6 @@ body {
     background-color: var(--backColor);
     color: var(--color1);
   }
-
 
 
 /* Avoid the navbar from covering the titles */
@@ -90,7 +89,7 @@ header {
     display: flex;
     flex-direction: column;
     background-color: var(--backSideBar);
-    width: 240px;
+    width: var(--sideBarSize);
     position: absolute;
     top:47px;
     left: 0;
@@ -119,6 +118,30 @@ header {
 
 
   .page-content {
-    margin-left: 270px;
+    margin-left: var(--sideBarSize);
     padding-left: 1em;
+    margin-right: 2em;;
+  }
+
+
+
+
+  footer{
+    background: var(--color1);
+    margin-left: var(--sideBarSize);
+    padding: 25px 0 10px;
+    text-align: center;
+    color: var(--backColor);
+    font-size: 40px;
+  }
+
+
+  .copyright {
+    margin-top: 30px;
+    font-size: 18px;
+  }
+
+  footer a {
+    text-decoration: none;
+    color: var(--backColor);
   }
