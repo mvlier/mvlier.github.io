@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Cech Complex</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        #container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin: auto;
+            width: 800px;
+        }
+        #plot {
+            margin: auto;
+            width: 600px;
+            height: 600px;
+        }
+        #controls {
+            margin-left: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        input {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive Cech Complex</h1>
+    
+    <div id="container">
+        <div id="plot"></div>
+
+        <!-- Controls for the animation -->
+        <div id="controls">
+            <label for="r">Radius:</label>
+            <input type="range" id="r" min="0" max="1050" value="0" step="6"><br>
+
+            <label for="n_pts">Number of Points:</label>
+            <input type="range" id="n_pts" min="3" max="40" value="21" step="1"><br>
+
+            <label for="seed">Seed:</label>
+            <input type="range" id="seed" min="0" max="50" value="0" step="1"><br>
+
+            <label for="noise">Noise:</label>
+            <input type="range" id="noise" min="0" max="10" value="2.0" step="0.1">
+        </div>
+    </div>
+
+    <script>
+        // Function to generate a random number generator with a seed
+        function seededRandom(seed) {
+            const mask = 0xffffffff;
+            let m_w = (123456789 + seed) & mask;
+            let m_z = (987654321 - seed) & mask;
+
+            return function() {
+                m_z = (36969 * (m_z & 65535) + (m_z >>> 16)) & mask;
+                m_w = (18000 * (m_w & 65535) + (m_w >>> 16)) & mask;
+                let result = ((m_z << 16) + (m_w & 65535)) >>> 0;
+                result /= 4294967296;
+                return result;
+            };
+        }
+
+        function generateVietorisRipsComplex(r, n_pts, seed, noise) {
+            // Randomly generate points in a noisy circular shape
+            const rand = seededRandom(seed);
+            const theta = Array.from({ length: n_pts }, () => 2 * Math.PI * rand());
+            const noise_x = Array.from({ length: n_pts }, () => noise * (rand() - 0.5));
+            const noise_y = Array.from({ length: n_pts }, () => noise * (rand() - 0.5));
+            const x = theta.map((t, i) => 10 * Math.cos(t) + noise_x[i]);
+            const y = theta.map((t, i) => 10 * Math.sin(t) + noise_y[i]);
+
+            // Plotly traces
+            const scatterTrace = {
+                x: x,
+                y: y,
+                mode: 'markers',
+                marker: { size: 5, color: 'black' },
+                type: 'scatter',
+                name: 'Points'
+            };
+
+            // Circles around points
+            const radius = r / 100;
+            const circleTraces = x.map((xi, i) => ({
+                type: 'scatter',
+                x: [xi],
+                y: [y[i]],
+                mode: 'markers',
+                marker: { size: radius*21, color: 'rgba(255,0,0,0.2)' },
+                showlegend: false
+            }));
+
+            // Line segments and triangles between points
+            const lineTraces = [];
+            const triangleTraces = [];
+            for (let i = 0; i < n_pts; i++) {
+                for (let j = i + 1; j < n_pts; j++) {
+                    const distSq = (x[i] - x[j]) ** 2 + (y[i] - y[j]) ** 2;
+                    if (distSq <= 4 * radius ** 2) {
+                        lineTraces.push({
+                            x: [x[i], x[j]],
+                            y: [y[i], y[j]],
+                            mode: 'lines',
+                            line: { color: 'blue', width: 1 },
+                            type: 'scatter',
+                            name: 'Edges'
+                        });
+
+                        // Check for a third point to form a triangle
+                        for (let k = j + 1; k < n_pts; k++) {
+                            const d = 2 * (x[i] * (y[j] - y[k]) + x[j] * (y[k] - y[i]) + x[k] * (y[i] - y[j]));
+                            const ux = ((x[i] * x[i] + y[i] * y[i]) * (y[j] - y[k]) + (x[j] * x[j] + y[j] * y[j]) * (y[k] - y[i]) + (x[k] * x[k] + y[k] * y[k]) * (y[i] - y[j])) / d;
+                            const uy = ((x[i] * x[i] + y[i] * y[i]) * (x[k] - x[j]) + (x[j] * x[j] + y[j] * y[j]) * (x[i] - x[k]) + (x[k] * x[k] + y[k] * y[k]) * (x[j] - x[i])) / d;
+                            
+                            if ((x[i] - ux) ** 2 + (y[i] - uy) ** 2 <= radius ** 2 &&
+                                (x[j] - ux) ** 2 + (y[j] - uy) ** 2 <= radius ** 2 &&
+                                (x[k] - ux) ** 2 + (y[k] - uy) ** 2 <= radius ** 2) {
+                                triangleTraces.push({
+                                    type: 'scatter',
+                                    x: [x[i], x[j], x[k], x[i]],
+                                    y: [y[i], y[j], y[k], y[i]],
+                                    fill: 'toself',
+                                    fillcolor: 'rgba(0, 0, 255, 0.5)',
+                                    line: { color: 'darkblue' },
+                                    mode: 'lines+markers',
+                                    showlegend: false
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Update the plot
+            const layout = {
+                xaxis: { range: [-20, 20] },
+                yaxis: { range: [-20, 20], scaleanchor: "x" },
+                width: 600,
+                height: 600,
+                title: `Cech Complex with r = ${radius}`,
+                showlegend: false
+            };
+
+            Plotly.newPlot('plot', [scatterTrace, ...lineTraces, ...triangleTraces, ...circleTraces], layout);
+        }
+
+        // Initial plot
+        let r = 0;
+        let n_pts = 21;
+        let seed = 0;
+        let noise = 2.0;
+        generateVietorisRipsComplex(r, n_pts, seed, noise);
+
+        // Controls interaction
+        document.getElementById('r').oninput = function() {
+            r = this.value;
+            generateVietorisRipsComplex(r, n_pts, seed, noise);
+        };
+
+        document.getElementById('n_pts').oninput = function() {
+            n_pts = this.value;
+            generateVietorisRipsComplex(r, n_pts, seed, noise);
+        };
+
+        document.getElementById('seed').oninput = function() {
+            seed = this.value;
+            generateVietorisRipsComplex(r, n_pts, seed, noise);
+        };
+
+        document.getElementById('noise').oninput = function() {
+            noise = this.value;
+            generateVietorisRipsComplex(r, n_pts, seed, noise);
+        };
+    </script>
+</body>
+</html>
